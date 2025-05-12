@@ -137,7 +137,7 @@
           c.width=w;c.height=h;
           const ctx=c.getContext('2d');
           ctx.drawImage(img,0,0,w,h);
-          c.toBlob(b=>res(new File([b],file.name,{type:file.type})),file.type,0.8);
+          c.toBlob(b=>res(new File([b],file.name,{type:file.type})),file.type,1.0);
         };
         img.onerror=rej;
         img.src=URL.createObjectURL(file);
@@ -147,7 +147,7 @@
       if(!file) return null;
       if(!(await validateImage(file,minW,minH)))
         return alert(`Resim en az ${minW}×${minH} olmalı`);
-      file=await resizeImage(file,minW,minH);
+    
       const ref=storage.ref().child(`${path}/${Date.now()}_${file.name}`);
       const task=ref.put(file);
       if(progressEl){progressEl.style.display='block';progressEl.value=0;}
