@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QR Menü – Admin Paneli</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" />
+  <style>
+    :root {
+      --coffee:#6F4E37;
+      --light:#f9f9f9;
+      --accent:#a68b77;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Montserrat',sans-serif}
+    body{background:var(--light);color:#333}
+    .header{background:var(--coffee);color:#fff;padding:1rem;text-align:center;font-size:1.5rem}
+    .tabs{display:flex;justify-content:center;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.1)}
+    .tab{flex:1;text-align:center;padding:.75rem;cursor:pointer;font-weight:600;color:#666;border-bottom:3px solid transparent}
+    .tab.active{color:var(--coffee);border-color:var(--coffee)}
+    .container{max-width:1000px;margin:2rem auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+    .section{display:none;padding:2rem}
+    .section.active{display:block}
+    h2{font-size:1.4rem;margin-bottom:1rem;color:var(--coffee)}
+    form{background:#fafafa;border:1px solid #ddd;border-radius:6px;padding:1.5rem;margin-bottom:2rem}
+    label{display:block;margin-top:1rem;font-weight:600}
+    input,textarea,select,button{width:100%;padding:.6rem;margin-top:.5rem;border:1px solid #ccc;border-radius:4px}
+    button{margin-top:1.2rem;padding:.7rem;border:none;border-radius:4px;background:var(--coffee);color:#fff;font-weight:600;cursor:pointer}
+    button:hover{background:var(--accent)}
+    .category-list{list-style:none;margin-top:1rem}
+    .category-list li{background:#fff;border:1px solid #eee;padding:1rem;margin-bottom:.75rem;border-radius:6px;display:flex;align-items:center;cursor:grab;position:relative}
+    .category-list li img{width:50px;height:50px;object-fit:cover;border-radius:4px;margin-right:1rem}
+    .category-list li .name{flex:1;font-weight:600;color:var(--coffee)}
+    .product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1rem}
+    .product-grid .card{background:#fff;border:1px solid #eee;border-radius:6px;padding:1rem;box-shadow:0 2px 6px rgba(0,0,0,.05);position:relative}
+    .product-grid .card img{width:100%;height:150px;object-fit:cover;border-radius:4px;margin-bottom:.5rem}
+    .product-grid .card h3{font-size:1rem;margin-bottom:.5rem;color:var(--coffee)}
+    .product-grid .card .price{font-weight:700;margin-bottom:.5rem}
+    .toggle-btn{position:absolute;top:10px;right:38px;font-size:1.2rem;cursor:pointer;color:var(--coffee)}
+    .delete-btn{position:absolute;top:10px;right:10px;font-size:1.1rem;color:#e74c3c;cursor:pointer}
+    .search-row{display:flex;gap:1rem;margin-bottom:1rem}
+    .search-row input,.search-row select{flex:1}
+    /* Progress Bars */
+    progress{width:100%;height:6px;border:none;border-radius:3px;background:#eee;display:none;margin-top:.5rem}
+    progress::-webkit-progress-bar{background:#eee;border-radius:3px}
+    progress::-webkit-progress-value{background:var(--coffee);border-radius:3px}
+    progress::-moz-progress-bar{background:var(--coffee);border-radius:3px}
+  </style>
+</head>
+<body>
+  <div class="header">QREVA CAFE ADMIN PANELİ</div>
+  <div class="tabs">
+    <div class="tab active" data-target="catSection">Kategoriler</div>
+    <div class="tab" data-target="prodSection">Ürünler</div>
+    <div class="tab" data-target="infoSection">Firma Bilgisi</div>
+  </div>
+  <div class="container">
+    <!-- Kategoriler -->
+    <div id="catSection" class="section active">
+      <h2>Kategori Yönetimi</h2>
+      <form id="categoryForm">
+        <input type="hidden" id="catId" />
+        <label>Kategori Adı</label><input id="catName" type="text" required />
+        <label>Resim (min 300×300 px)</label><input id="catImg" type="file" accept="image/*" />
+        <progress id="catProgress" value="0" max="100"></progress>
+        <button type="submit">Kaydet</button>
+      </form>
+      <ul class="category-list" id="categoryList"></ul>
+    </div>
+    <!-- Ürünler -->
+    <div id="prodSection" class="section">
+      <h2>Ürün Yönetimi</h2>
+      <form id="productForm">
+        <input type="hidden" id="prodId" />
+        <label>Ürün Adı</label><input id="prodName" type="text" required />
+        <label>Fiyat (₺)</label><input id="prodPrice" type="number" step="0.01" required />
+        <label>Açıklama</label><textarea id="prodDesc"></textarea>
+        <label>Kategori</label><select id="prodCategory" required><option disabled selected>Seçiniz</option></select>
+        <label>Resim (min 400×400 px)</label><input id="prodImg" type="file" accept="image/*" />
+        <progress id="prodProgress" value="0" max="100"></progress>
+        <button type="submit">Kaydet</button>
+      </form>
+      <div class="search-row">
+        <input id="searchInput" type="text" placeholder="Ürün ara..." />
+        <select id="filterCategory"><option value="">Tüm Kategoriler</option></select>
+      </div>
+      <div class="product-grid" id="productGrid"></div>
+    </div>
+    <!-- Firma Bilgisi -->
+    <div id="infoSection" class="section">
+      <h2>Firma Bilgisi</h2>
+      <div class="info-area">
+        <label>WiFi Şifresi</label><input id="wifiPwd" type="text" />
+        <label>Hakkımızda</label><textarea id="aboutText"></textarea>
+        <label>Google Maps Link</label><input id="mapLink" type="url" />
+        <label>Facebook Link</label><input id="fbLink" type="url" />
+        <label>YouTube Link</label><input id="ytLink" type="url" />
+        <label>Instagram Link</label><input id="instaLink" type="url" />
+        <button id="saveInfoBtn">Kaydet</button>
+      </div>
+    </div>
+  </div>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+  <script>
+    const cfg={apiKey:"AIzaSyA16M_6xOrUGEn9YCdzIFxBYXr-9ST7IWY",authDomain:"qrmenuapplication-9b920.firebaseapp.com",databaseURL:"https://qrmenuapplication-9b920-default-rtdb.firebaseio.com",projectId:"qrmenuapplication-9b920",storageBucket:"qrmenuapplication-9b920.appspot.com",messagingSenderId:"1050979828232",appId:"1:1050979828232:web:54d81e21056193bee147bd",measurementId:"G-C3S611TREX"};
+    firebase.initializeApp(cfg);
+    const db=firebase.database(),storage=firebase.storage();
+
+    /* ======= Sekme Geçişleri ======= */
+    document.querySelectorAll('.tab').forEach(btn=>btn.onclick=()=>{
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.target).classList.add('active');
+    });
+
+    /* ======= Görsel Yardımcıları ======= */
+    function validateImage(file,minW,minH){
+      return new Promise(res=>{
+        const img=new Image();
+        img.onload=()=>res(img.width>=minW&&img.height>=minH);
+        img.src=URL.createObjectURL(file);
+      });
+    }
+    function resizeImage(file,maxW,maxH){
+      return new Promise((res,rej)=>{
+        const img=new Image();
+        img.onload=()=>{
+          let w=img.width,h=img.height,ratio=Math.min(maxW/w,maxH/h,1);
+          w*=ratio;h*=ratio;
+          const c=document.createElement('canvas');
+          c.width=w;c.height=h;
+          const ctx=c.getContext('2d');
+          ctx.drawImage(img,0,0,w,h);
+          c.toBlob(b=>res(new File([b],file.name,{type:file.type})),file.type,0.8);
+        };
+        img.onerror=rej;
+        img.src=URL.createObjectURL(file);
+      });
+    }
+    async function uploadImage(file,path,minW,minH,progressEl){
+      if(!file) return null;
+      if(!(await validateImage(file,minW,minH)))
+        return alert(`Resim en az ${minW}×${minH} olmalı`);
+      file=await resizeImage(file,minW,minH);
+      const ref=storage.ref().child(`${path}/${Date.now()}_${file.name}`);
+      const task=ref.put(file);
+      if(progressEl){progressEl.style.display='block';progressEl.value=0;}
+      return new Promise((resolve,reject)=>{
+        task.on('state_changed',snap=>{
+          if(progressEl) progressEl.value = (snap.bytesTransferred/snap.totalBytes)*100;
+        },reject,async()=>{
+          if(progressEl){progressEl.style.display='none';progressEl.value=0;}
+          resolve(await ref.getDownloadURL());
+        });
+      });
+    }
+
+    /* ======= Kategoriler ======= */
+    const catForm=document.getElementById('categoryForm'),
+          catList=document.getElementById('categoryList'),
+          catProgress=document.getElementById('catProgress');
+
+    catForm.onsubmit=async e=>{
+      e.preventDefault();
+      try{
+        const snap=await db.ref('Category9').once('value');
+        const count=Object.keys(snap.val()||{}).length;
+        const id=catForm.catId.value||db.ref('Category9').push().key;
+        const name=catForm.catName.value;
+        const file=catForm.catImg.files[0];
+        const url=await uploadImage(file,'categoryimages9',300,300,catProgress);
+        const data={id,name,active:true,order:catForm.catId.value?undefined:count};
+        if(url) data.imageUrl=url;
+        await db.ref(`Category9/${id}`).update(data);
+        catForm.reset();
+      }catch(err){alert('Kategori yüklenirken hata: '+err.message)}
+    };
+
+    function renderCategories(data){
+      catList.innerHTML='';
+      data.forEach(c=>{
+        const li=document.createElement('li');
+        li.draggable=true;li.dataset.id=c.id;
+        li.innerHTML=`<img src="${c.imageUrl||''}"/><span class="name">${c.name}</span>`;
+        const tog=document.createElement('i');
+        tog.className=`fas fa-toggle-${c.active?'on':'off'} toggle-btn`;tog.dataset.cat=c.id;
+        const edt=document.createElement('i');
+        edt.className='fas fa-edit toggle-btn';edt.style.right='64px';edt.dataset.editCat=c.id;
+        const del=document.createElement('i');
+        del.className='fas fa-trash-alt delete-btn';del.dataset.delCat=c.id;
+        li.append(tog,edt,del);
+        catList.append(li);
+      });
+      applyDragOrder();
+    }
+
+    db.ref('Category9').orderByChild('order').on('value',snap=>{
+      renderCategories(Object.values(snap.val()||{}));
+      // kategori açılır menüleri güncelle
+      document.getElementById('filterCategory').innerHTML='<option value="">Tüm Kategoriler</option>';
+      const prodCat=document.getElementById('prodCategory');
+      prodCat.innerHTML='<option disabled selected>Seçiniz</option>';
+      Object.values(snap.val()||{}).forEach(c=>{
+        const opt=document.createElement('option');opt.value=c.id;opt.textContent=c.name;
+        document.getElementById('filterCategory').append(opt);
+        prodCat.append(opt.cloneNode(true));
+      });
+    });
+
+    /* Sürükle-bırak sıralama */
+    let dragSrc;
+    function ds(e){dragSrc=e.currentTarget;dragSrc.style.opacity='.5';}
+    function de(){dragSrc.style.opacity='1';saveOrder();}
+    function dover(e){e.preventDefault();}
+    function drop(e){e.stopPropagation();if(dragSrc!==e.currentTarget)catList.insertBefore(dragSrc,e.currentTarget);}
+    function saveOrder(){[...catList.children].forEach((li,i)=>db.ref(`Category9/${li.dataset.id}`).update({order:i}));}
+    function applyDragOrder(){[...catList.children].forEach(li=>{li.removeEventListener('dragstart',ds);li.addEventListener('dragstart',ds);li.addEventListener('dragover',dover);li.addEventListener('drop',drop);li.addEventListener('dragend',de);});}
+
+    /* ======= Ürünler ======= */
+    const prodForm=document.getElementById('productForm'),
+          searchIn=document.getElementById('searchInput'),
+          filterIn=document.getElementById('filterCategory'),
+          prodGrid=document.getElementById('productGrid'),
+          prodProgress=document.getElementById('prodProgress');
+
+    prodForm.onsubmit=async e=>{
+      e.preventDefault();
+      try{
+        const id=prodForm.prodId.value||db.ref('Products9').push().key;
+        const name=prodForm.prodName.value;
+        const price=parseFloat(prodForm.prodPrice.value);
+        const description=prodForm.prodDesc.value;
+        const categoryId=prodForm.prodCategory.value;
+        const file=prodForm.prodImg.files[0];
+        const url=await uploadImage(file,'productimages9',400,400,prodProgress);
+        const prodData={id,name,price,description,categoryId,active:true};
+        if(url) prodData.imageUrl=url;
+        await db.ref(`Products9/${id}`).update(prodData);
+        prodForm.reset();
+      }catch(err){alert('Ürün yüklenirken hata: '+err.message)}
+    };
+
+    function renderProducts(data){
+      prodGrid.innerHTML='';
+      data.forEach(p=>{
+        const card=document.createElement('div');
+        card.className='card'+(p.active?'':' inactive');
+        card.dataset.name=p.name.toLowerCase();card.dataset.cat=p.categoryId;
+        card.innerHTML=`<img src="${p.imageUrl||''}"/><h3>${p.name}</h3><div class="price">₺${p.price.toFixed(2)}</div>`;
+        const tog=document.createElement('i');
+        tog.className=`fas fa-toggle-${p.active?'on':'off'} toggle-btn`;tog.dataset.prod=p.id;
+        const edt=document.createElement('i');
+        edt.className='fas fa-edit toggle-btn';edt.style.right='64px';edt.dataset.editProd=p.id;
+        const del=document.createElement('i');
+        del.className='fas fa-trash-alt delete-btn';del.dataset.delProd=p.id;
+        card.append(tog,edt,del);
+        prodGrid.append(card);
+      });
+      filterAndSearch();
+    }
+
+    db.ref('Products9').on('value',snap=>{
+      renderProducts(Object.values(snap.val()||{}));
+    });
+
+    function filterAndSearch(){
+      const txt=searchIn.value.toLowerCase(),fc=filterIn.value;
+      document.querySelectorAll('#productGrid .card').forEach(c=>{
+        c.style.display=(c.dataset.name.includes(txt)&&(!fc||c.dataset.cat===fc))?'block':'none';
+      });
+    }
+    searchIn.addEventListener('input',filterAndSearch);
+    filterIn.addEventListener('change',filterAndSearch);
+
+    /* ======= Toggle, Edit & Delete İşlemleri ======= */
+    document.body.addEventListener('click',async e=>{
+      /* Durum Değiştir */
+      if(e.target.dataset.cat){
+        db.ref(`Category9/${e.target.dataset.cat}`).update({active:!e.target.classList.contains('fa-toggle-on')});
+      }
+      if(e.target.dataset.prod){
+        db.ref(`Products9/${e.target.dataset.prod}`).update({active:!e.target.classList.contains('fa-toggle-on')});
+      }
+      /* Düzenle */
+      if(e.target.dataset.editCat){
+        const s=await db.ref(`Category9/${e.target.dataset.editCat}`).once('value');
+        const c=s.val();catForm.catId.value=c.id;catForm.catName.value=c.name;
+      }
+      if(e.target.dataset.editProd){
+        const s=await db.ref(`Products9/${e.target.dataset.editProd}`).once('value');
+        const p=s.val();prodForm.prodId.value=p.id;prodForm.prodName.value=p.name;prodForm.prodPrice.value=p.price;prodForm.prodDesc.value=p.description;prodForm.prodCategory.value=p.categoryId;
+      }
+      /* Sil */
+      if(e.target.dataset.delCat){
+        if(confirm('Bu kategoriyi silmek istediğinizden emin misiniz?')){
+          const id=e.target.dataset.delCat;
+          const snap=await db.ref(`Category9/${id}`).once('value');
+          const c=snap.val();
+          if(c && c.imageUrl){
+            try{await storage.refFromURL(c.imageUrl).delete();}catch{/**/}
+          }
+          await db.ref(`Category9/${id}`).remove();
+        }
+      }
+      if(e.target.dataset.delProd){
+        if(confirm('Bu ürünü silmek istediğinizden emin misiniz?')){
+          const id=e.target.dataset.delProd;
+          const snap=await db.ref(`Products9/${id}`).once('value');
+          const p=snap.val();
+          if(p && p.imageUrl){
+            try{await storage.refFromURL(p.imageUrl).delete();}catch{/**/}
+          }
+          await db.ref(`Products9/${id}`).remove();
+        }
+      }
+    });
+
+    /* ======= Firma Bilgisi ======= */
+    const aboutEl=document.getElementById('aboutText'),
+          wifiEl=document.getElementById('wifiPwd'),
+          mapEl=document.getElementById('mapLink'),
+          fbEl=document.getElementById('fbLink'),
+          ytEl=document.getElementById('ytLink'),
+          instaEl=document.getElementById('instaLink'),
+          saveInfo=document.getElementById('saveInfoBtn');
+
+    db.ref('firma9').once('value').then(s=>{
+      const d=s.val()||{};
+      aboutEl.value=d.about||'';
+      wifiEl.value=d.wifi||'';
+      mapEl.value=d.map||'';
+      fbEl.value=d.fb||'';
+      ytEl.value=d.yt||'';
+      instaEl.value=d.insta||'';
+    });
+
+    saveInfo.onclick=()=>{
+      db.ref('firma9').update({about:aboutEl.value,wifi:wifiEl.value,map:mapEl.value,fb:fbEl.value,yt:ytEl.value,insta:instaEl.value});
+      alert('Firma bilgisi kaydedildi');
+    };
+  </script>
+</body>
+</html>
